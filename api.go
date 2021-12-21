@@ -7,7 +7,19 @@ import (
 	"context"
 	"os"
 	"github.com/lib/pq"
+	// "encoding/json"
 )
+
+// structs
+type Task struct {
+	Id int
+	Title string
+	Description string
+	Category string
+	Deadline pq.NullTime
+	Created_at pq.NullTime
+	Updated_at pq.NullTime
+}
 
 func main() {
 	r := gin.Default()
@@ -21,7 +33,15 @@ func main() {
 
 	// get all tasks
 	r.GET("/alltasks", func(c *gin.Context) {
-		getAllTasks(connectDB())
+		var taskList []Task = getAllTasks(connectDB())
+		fmt.Println(taskList)
+
+		// var jsonData []byte
+		// jsonData, _ = json.Marshal(taskList)
+
+		// fmt.Println(string(jsonData))
+
+		c.JSON(200, taskList)
 	})
 
 	// start the server
@@ -46,45 +66,42 @@ func connectDB() (c *pgx.Conn) {
 	return conn;
 }
 
-func getAllTasks(c *pgx.Conn) {
+func getAllTasks(c *pgx.Conn) ([]Task) {
 	// get all tasks
-	type Task struct {
-		id int
-		title string
-		description string
-		category string
-		deadline pq.NullTime
-		created_at pq.NullTime
-		updated_at pq.NullTime
-	}
 
 	tasks, err := c.Query(context.Background(), "SELECT * from public.get_all_tasks();")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to fetch tasks from db: %v\n", err)
 		os.Exit(1)
 	}
+
 	defer tasks.Close();
+	defer c.Close(context.Background());
 
 	var taskSlice []Task
 	for tasks.Next() {
 		var t Task
 		err = tasks.Scan(
-			&t.id, 
-			&t.title,
-			&t.description,
-			&t.category,
-			&t.deadline,
-			&t.created_at,
-			&t.updated_at,
+			&t.Id, 
+			&t.Title,
+			&t.Description,
+			&t.Category,
+			&t.Deadline,
+			&t.Created_at,
+			&t.Updated_at,
 		)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to fetch tasks from db: %v\n", err)
 			os.Exit(1)
 		}
-		taskSlice = append(taskSlice, t);
+		taskSlice = append(taskSlice, t)
+
+		// fmt.Println(t.created_at.Time.String())
 	}
 
-	fmt.Println(taskSlice);
+	// fmt.Println(taskSlice);
+
+	return taskSlice;
 }
 
 
