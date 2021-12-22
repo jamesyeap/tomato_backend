@@ -44,6 +44,22 @@ func main() {
 		c.JSON(200, taskList)
 	})
 
+	// get a specific task by id
+	r.POST("/gettask", func(c *gin.Context) {
+		var id int;
+		err := c.BindJSON(&id);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to parse JSON body: %v\n", err)
+			os.Exit(1)
+		}
+
+		var t Task = getTask(id);
+
+		// fmt.Println(t);
+
+		c.JSON(200, t)
+	})
+
 	// deletes a task
 	r.POST("/deletetask", func(c *gin.Context) {
 		var id int;
@@ -53,7 +69,9 @@ func main() {
 			os.Exit(1)
 		}
 
-		fmt.Println(id);
+		deleteTask(id);
+
+		c.String(200, fmt.Sprintf("Successfully deleted task with id: %v", id))
 	})
 
 	// adds a task
@@ -75,7 +93,6 @@ func main() {
 }
 
 /* ----------------------------------------------------------------- DATABASE FUNCTIONS --------- */
-
 /* Initialises and returns a connection to the database */
 func connectDB() (c *pgx.Conn) {
 	// postgresql connection details
@@ -127,6 +144,30 @@ func getAllTasks() ([]Task) {
 	return taskSlice;
 }
 
+/* Return a Task by its id */
+func getTask(id int) (Task) {
+	c := connectDB()
+	defer c.Close(context.Background())
+
+	var t Task
+
+	err := c.QueryRow(context.Background(), "SELECT * from public.get_all_tasks() WHERE id=$1;", id).Scan(
+		&t.Id, 
+		&t.Title,
+		&t.Description,
+		&t.Category,
+		&t.Deadline,
+		&t.Created_at,
+		&t.Updated_at,		
+	)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to fetch task from db: %v\n", err)
+		os.Exit(1)
+	}
+
+	return t;
+}
+
 /* Deletes a Task in the database with the corresponding id */
 func deleteTask(id int) {
 	c := connectDB()
@@ -166,6 +207,9 @@ func addTask(params CreateTaskParams) {
 
 // get all tasks
 //		curl -X GET 0.0.0.0:8080/alltasks
+
+// get a task where id=1
+//		curl -X POST 0.0.0.0:8080/gettask -H "Content-Type: application/json" -d '2'
 
 // deletes a task by its id (which is its primary-key in the db)
 // 		curl -X POST 0.0.0.0:8080/deletetask -H "Content-Type: application/json" -d '2'
