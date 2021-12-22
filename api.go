@@ -204,6 +204,7 @@ func addTask(params CreateTaskParams) {
 /* ------ test-commands ------ */
 // test if server is still up
 // 		curl -X GET 0.0.0.0:8080/ping
+//		curl -X GET https://tomato-backend-api.herokuapp.com/ping
 
 // get all tasks
 //		curl -X GET 0.0.0.0:8080/alltasks
