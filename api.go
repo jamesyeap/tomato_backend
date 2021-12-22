@@ -6,9 +6,10 @@ import (
 	"github.com/jackc/pgx/v4"
 	"context"
 	"os"
-	"github.com/lib/pq"
-	"time"
+	// "github.com/lib/pq"
+	// "time"
 	"github.com/joho/godotenv"
+	"github.com/emvi/null"
 )
 
 // structs
@@ -17,16 +18,16 @@ type Task struct {
 	Title string
 	Description string
 	Category string
-	Deadline pq.NullTime
-	Created_at pq.NullTime
-	Updated_at pq.NullTime
+	Deadline null.Time
+	Created_at null.Time
+	Updated_at null.Time
 }
 
 type CreateTaskParams struct {
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Category_Id string `json:"category_id"`
-	Deadline time.Time `json:"deadline"`
+	Deadline null.Time `json:"deadline"`
 }
 
 type UpdateTaskParams struct {
@@ -34,7 +35,7 @@ type UpdateTaskParams struct {
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Category_Id string `json:"category_id"`
-	Deadline time.Time `json:"deadline"`	
+	Deadline null.Time `json:"deadline"`	
 }
 
 func main() {
@@ -254,6 +255,7 @@ func addTask(params CreateTaskParams) {
 // add a task
 //		curl -X POST 0.0.0.0:8080/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
 //		curl -X POST https://tomato-backend-api.herokuapp.com/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
+//		curl -X POST 0.0.0.0:8080/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": null}'
 
 // update a task
 //		curl -X POST 0.0.0.0:8080/updatetask -H "Content-Type: application/json" -d '{"id":8, "category_id":"1", "title":"updated", "description":"this is an updated description", "deadline": "2018-04-13T19:24:00+08:00"}'
