@@ -1,6 +1,7 @@
 module api
 
 go 1.17
+// +heroku goVersion go1.17
 
 require (
 	github.com/gin-gonic/gin v1.7.7
