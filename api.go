@@ -29,6 +29,14 @@ type CreateTaskParams struct {
 	Deadline time.Time `json:"deadline"`
 }
 
+type UpdateTaskParams struct {
+	Id int `json:id`
+	Title string `json:"title"`
+	Description string `json:"description"`
+	Category_Id string `json:"category_id"`
+	Deadline time.Time `json:"deadline"`	
+}
+
 func main() {
 	r := gin.Default()
 
@@ -61,6 +69,20 @@ func main() {
 		c.JSON(200, t)
 	})
 
+	// update a specific task by id
+	r.POST("/updatetask", func(c *gin.Context) {
+		var params UpdateTaskParams
+		err := c.BindJSON(&params);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to parse JSON body: %v\n", err)
+			os.Exit(1)
+		}
+
+		updateTask(params)
+
+		c.JSON(200, fmt.Sprintf("Successfully updated task with id: %v", params.Id))
+	})
+
 	// deletes a task
 	r.POST("/deletetask", func(c *gin.Context) {
 		var id int;
@@ -90,7 +112,6 @@ func main() {
 
 	// start the server at 0.0.0.0:8080
 	r.Run()
-
 }
 
 /* ----------------------------------------------------------------- DATABASE FUNCTIONS --------- */
@@ -168,6 +189,18 @@ func getTask(id int) (Task) {
 	return t;
 }
 
+/* Update a Task by its id */
+func updateTask(t UpdateTaskParams) {
+	c := connectDB()
+	defer c.Close(context.Background())
+
+	_, err := c.Exec(context.Background(), "UPDATE tasks SET category_id=$1, title=$2, description=$3, deadline=$4 WHERE id=$5", t.Category_Id, t.Title, t.Description, t.Deadline, t.Id)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to update task: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 /* Deletes a Task in the database with the corresponding id */
 func deleteTask(id int) {
 	c := connectDB()
@@ -221,6 +254,9 @@ func addTask(params CreateTaskParams) {
 // add a task
 //		curl -X POST 0.0.0.0:8080/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
 //		curl -X POST https://tomato-backend-api.herokuapp.com/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
+
+// update a task
+//		curl -X POST 0.0.0.0:8080/updatetask -H "Content-Type: application/json" -d '{"id":8, "category_id":"1", "title":"updated", "description":"this is an updated description", "deadline": "2018-04-13T19:24:00+08:00"}'
 
 
 
