@@ -7,12 +7,12 @@ import (
 	"context"
 	"os"
 	"github.com/lib/pq"
-	// "encoding/json"
+	"time"
 )
 
 // structs
 type Task struct {
-	Id int
+	Id int // note: make sure the attributes are Capitalized -> if not they won't be exported -> json-encoder will not be able to access attributes, causing an empty object ("{}") to be returned.
 	Title string
 	Description string
 	Category string
@@ -21,10 +21,17 @@ type Task struct {
 	Updated_at pq.NullTime
 }
 
+type CreateTaskParams struct {
+	Title string `json:"title"`
+	Description string `json:"description"`
+	Category_Id string `json:"category_id"`
+	Deadline time.Time `json:"deadline"`
+}
+
 func main() {
 	r := gin.Default()
 
-	/* ----------------------------------- URL ENDPOINTS ----------------------------------- */
+	/* --------------------------------------------------------------- URL ENDPOINTS -------------- */
 
 	// ping test
 	r.GET("/ping", func(c *gin.Context) {
@@ -33,23 +40,43 @@ func main() {
 
 	// get all tasks
 	r.GET("/alltasks", func(c *gin.Context) {
-		var taskList []Task = getAllTasks(connectDB())
-		fmt.Println(taskList)
-
-		// var jsonData []byte
-		// jsonData, _ = json.Marshal(taskList)
-
-		// fmt.Println(string(jsonData))
-
+		var taskList []Task = getAllTasks()
 		c.JSON(200, taskList)
 	})
 
-	// start the server
+	// deletes a task
+	r.POST("/deletetask", func(c *gin.Context) {
+		var id int;
+		err := c.BindJSON(&id);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to parse JSON body: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println(id);
+	})
+
+	// adds a task
+	r.POST("/addtask", func(c *gin.Context) {
+		var params CreateTaskParams
+		err := c.BindJSON(&params)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to parse JSON body: %v\n", err)
+			os.Exit(1)
+		}
+
+		// fmt.Println(params)
+		addTask(params)		
+	})
+
+	// start the server at 0.0.0.0:8080
 	r.Run(":8080")
 
 }
 
-/* ----------------------------------- DATABASE FUNCTIONS ----------------------------------- */
+/* ----------------------------------------------------------------- DATABASE FUNCTIONS --------- */
+
+/* Initialises and returns a connection to the database */
 func connectDB() (c *pgx.Conn) {
 	// postgresql connection details
 	url := "postgres://msrwewroudbvot:f4e6c0a6f144fa28e13ef92503c9ac36f256ec8dce7ae4e0b56f4aa21b1e77a2@ec2-34-198-122-185.compute-1.amazonaws.com:5432/d2trus57r2q0ch"
@@ -66,17 +93,17 @@ func connectDB() (c *pgx.Conn) {
 	return conn;
 }
 
-func getAllTasks(c *pgx.Conn) ([]Task) {
-	// get all tasks
+/* Returns an array of Tasks stored in the database */
+func getAllTasks() ([]Task) {
+	c := connectDB()
+	defer c.Close(context.Background())
 
 	tasks, err := c.Query(context.Background(), "SELECT * from public.get_all_tasks();")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to fetch tasks from db: %v\n", err)
 		os.Exit(1)
 	}
-
 	defer tasks.Close();
-	defer c.Close(context.Background());
 
 	var taskSlice []Task
 	for tasks.Next() {
@@ -95,15 +122,56 @@ func getAllTasks(c *pgx.Conn) ([]Task) {
 			os.Exit(1)
 		}
 		taskSlice = append(taskSlice, t)
-
-		// fmt.Println(t.created_at.Time.String())
 	}
-
-	// fmt.Println(taskSlice);
 
 	return taskSlice;
 }
 
+/* Deletes a Task in the database with the corresponding id */
+func deleteTask(id int) {
+	c := connectDB()
+	defer c.Close(context.Background())
+
+	// use Exec to execute a query that does not return a result set
+	commandTag, err := c.Exec(context.Background(), "DELETE FROM tasks where id=$1;", id)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to delete task in db: %v\n", err)
+		os.Exit(1)
+	}
+	if commandTag.RowsAffected() != 1 {
+		fmt.Fprintf(os.Stderr, "No row found to delete\n")
+		os.Exit(1)
+	}
+}
+
+/* Adds a Task to the database */
+func addTask(params CreateTaskParams) {
+	c := connectDB()
+	defer c.Close(context.Background())
+
+	commandTag, err := c.Exec(context.Background(), "INSERT INTO tasks (category_id, title, description, deadline) VALUES ($1, $2, $3, $4);", params.Category_Id, params.Title, params.Description, params.Deadline)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to add task to db: %v\n", err)
+		os.Exit(1)
+	}
+	if commandTag.RowsAffected() != 1 {
+		fmt.Fprintf(os.Stderr, "Task not added to db\n")
+		os.Exit(1)
+	}
+}
+
+/* ------ test-commands ------ */
+// test if server is still up
+// 		curl -X GET 0.0.0.0:8080/ping
+
+// get all tasks
+//		curl -X GET 0.0.0.0:8080/alltasks
+
+// deletes a task by its id (which is its primary-key in the db)
+// 		curl -X POST 0.0.0.0:8080/deletetask -H "Content-Type: application/json" -d '2'
+
+// add a task
+//		curl -X POST 0.0.0.0:8080/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
 
 
 
