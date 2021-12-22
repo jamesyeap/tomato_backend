@@ -208,15 +208,19 @@ func addTask(params CreateTaskParams) {
 
 // get all tasks
 //		curl -X GET 0.0.0.0:8080/alltasks
+//		curl -X GET https://tomato-backend-api.herokuapp.com/alltasks
 
 // get a task where id=1
 //		curl -X POST 0.0.0.0:8080/gettask -H "Content-Type: application/json" -d '2'
+//		curl -X POST https://tomato-backend-api.herokuapp.com/gettask -H "Content-Type: application/json" -d '2'
 
 // deletes a task by its id (which is its primary-key in the db)
 // 		curl -X POST 0.0.0.0:8080/deletetask -H "Content-Type: application/json" -d '2'
+// 		curl -X POST https://tomato-backend-api.herokuapp.com/deletetask -H "Content-Type: application/json" -d '2'
 
 // add a task
 //		curl -X POST 0.0.0.0:8080/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
+//		curl -X POST https://tomato-backend-api.herokuapp.com/addtask -H "Content-Type: application/json" -d '{"category_id":"1", "title":"buy milk", "description":"muz be lactose-free lolz", "deadline": "2018-04-13T19:24:00+08:00"}'
 
 
 
