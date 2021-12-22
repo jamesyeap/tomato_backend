@@ -8,6 +8,7 @@ import (
 	"os"
 	"github.com/lib/pq"
 	"time"
+	"github.com/joho/godotenv"
 )
 
 // structs
@@ -95,9 +96,8 @@ func main() {
 /* ----------------------------------------------------------------- DATABASE FUNCTIONS --------- */
 /* Initialises and returns a connection to the database */
 func connectDB() (c *pgx.Conn) {
-	// postgresql connection details
-	url := "postgres://msrwewroudbvot:f4e6c0a6f144fa28e13ef92503c9ac36f256ec8dce7ae4e0b56f4aa21b1e77a2@ec2-34-198-122-185.compute-1.amazonaws.com:5432/d2trus57r2q0ch"
-	os.Setenv("DATABASE_URL", url);
+	// load the .env file that contains postgresql connection details
+	godotenv.Load(".env")
 
 	// open a connection to the database
 	conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
