@@ -89,7 +89,7 @@ func main() {
 	})
 
 	// start the server at 0.0.0.0:8080
-	r.Run(":8080")
+	r.Run()
 
 }
 
