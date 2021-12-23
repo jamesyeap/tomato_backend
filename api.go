@@ -111,7 +111,20 @@ func main() {
 		addTask(params)		
 	})
 
-	// start the server at 0.0.0.0:8080
+	// allow CORS for testing in dev
+	router.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"http://localhost:3000"},
+        AllowMethods:     []string{"GET", "PUT", "PATCH"},
+        AllowHeaders:     []string{"Origin"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+        AllowOriginFunc: func(origin string) bool {
+            return origin == "https://github.com"
+        },
+        MaxAge: 12 * time.Hour,
+    }))
+
+	// start the server
 	r.Run()
 }
 
