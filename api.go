@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"github.com/jackc/pgx/v4"
 	"context"
 	"os"
-	// "github.com/lib/pq"
-	// "time"
+	"time"
 	"github.com/joho/godotenv"
 	"github.com/emvi/null"
 )
@@ -112,7 +112,7 @@ func main() {
 	})
 
 	// allow CORS for testing in dev
-	router.Use(cors.New(cors.Config{
+	r.Use(cors.New(cors.Config{
         AllowOrigins:     []string{"http://localhost:3000"},
         AllowMethods:     []string{"GET", "PUT", "PATCH"},
         AllowHeaders:     []string{"Origin"},
