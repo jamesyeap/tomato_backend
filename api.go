@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
-	"time"
+	// "time"
 	"github.com/jackc/pgx/v4"
 	"context"
 	"os"
@@ -59,6 +59,7 @@ type UpdateTaskParams struct {
 func main() {
 	r := gin.Default()
 	// r.Use(CORSMiddleware());
+	r.Use(cors.Default());
 
 	/* --------------------------------------------------------------- URL ENDPOINTS -------------- */
 
@@ -131,7 +132,7 @@ func main() {
 		c.JSON(200, fmt.Sprintf("Successfully marked task as incomplete with id: %v", id))
 	})
 
-	// deletes a task
+	// deletes a task by id
 	r.POST("/deletetask", func(c *gin.Context) {
 		var id int;
 		err := c.BindJSON(&id);
@@ -159,17 +160,17 @@ func main() {
 	})
 
 	// allow CORS
-	r.Use(cors.New(cors.Config{
-		 AllowOrigins:     []string{"http://localhost:3000"},
-		 AllowMethods:     []string{"GET", "PUT", "PATCH"},
-		 AllowHeaders:     []string{"Origin"},
-		 ExposeHeaders:    []string{"Content-Length"},
-		 AllowCredentials: true,
-		 AllowOriginFunc: func(origin string) bool {
-		 	return origin == "https://github.com"
-		 },
-		 MaxAge: 12 * time.Hour,
-	}))
+	// r.Use(cors.New(cors.Config{
+	// 	 AllowOrigins:     []string{"http://localhost:3000"},
+	// 	 AllowMethods:     []string{"GET", "PUT", "PATCH"},
+	// 	 AllowHeaders:     []string{"Origin"},
+	// 	 ExposeHeaders:    []string{"Content-Length"},
+	// 	 AllowCredentials: true,
+	// 	 AllowOriginFunc: func(origin string) bool {
+	// 	 	return origin == "https://github.com"
+	// 	 },
+	// 	 MaxAge: 12 * time.Hour,
+	// }))
 
 	// start the server
 	r.Run()
