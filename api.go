@@ -17,6 +17,7 @@ type Task struct {
 	Description string
 	Category string
 	Deadline null.Time
+	Completed bool
 	Created_at null.Time
 	Updated_at null.Time
 }
@@ -169,8 +170,9 @@ func getAllTasks() ([]Task) {
 			&t.Description,
 			&t.Category,
 			&t.Deadline,
+			&t.Completed,
 			&t.Created_at,
-			&t.Updated_at,
+			&t.Updated_at,	
 		)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to fetch tasks from db: %v\n", err)
@@ -195,6 +197,7 @@ func getTask(id int) (Task) {
 		&t.Description,
 		&t.Category,
 		&t.Deadline,
+		&t.Completed,
 		&t.Created_at,
 		&t.Updated_at,		
 	)
@@ -211,7 +214,7 @@ func updateTask(t UpdateTaskParams) {
 	c := connectDB()
 	defer c.Close(context.Background())
 
-	_, err := c.Exec(context.Background(), "UPDATE tasks SET category_id=$1, title=$2, description=$3, deadline=$4 WHERE id=$5", t.Category_Id, t.Title, t.Description, t.Deadline, t.Id)
+	_, err := c.Exec(context.Background(), "UPDATE tasks SET category_id=$1, title=$2, description=$3, deadline=$4 WHERE id=$5;", t.Category_Id, t.Title, t.Description, t.Deadline, t.Id)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to update task: %v\n", err)
 		os.Exit(1)
