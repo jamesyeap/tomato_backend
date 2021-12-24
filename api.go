@@ -59,7 +59,10 @@ type UpdateTaskParams struct {
 func main() {
 	r := gin.Default()
 	// r.Use(CORSMiddleware());
-	r.Use(cors.Default());
+	config := cors.DefaultConfig()
+	config.AllowMethods = []string{"GET", "POST"}
+	config.AllowAllOrigins = true
+	r.Use(cors.New(config));
 
 	/* --------------------------------------------------------------- URL ENDPOINTS -------------- */
 
