@@ -101,6 +101,34 @@ func main() {
 		c.JSON(200, fmt.Sprintf("Successfully updated task with id: %v", params.Id))
 	})
 
+	// mark a task as completed by id
+	r.POST("/completetask", func(c *gin.Context) {
+		var id int;
+		err := c.BindJSON(&id);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to parse JSON body: %v\n", err)
+			os.Exit(1)
+		}
+
+		completeTask(id);
+
+		c.JSON(200, fmt.Sprintf("Successfully completed task with id: %v", id))
+	})
+
+	// mark a task as incomplete by id
+	r.POST("/incompletetask", func(c *gin.Context) {
+		var id int;
+		err := c.BindJSON(&id);
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to parse JSON body: %v\n", err)
+			os.Exit(1)
+		}
+
+		incompleteTask(id);
+
+		c.JSON(200, fmt.Sprintf("Successfully marked task as incomplete with id: %v", id))
+	})
+
 	// deletes a task
 	r.POST("/deletetask", func(c *gin.Context) {
 		var id int;
@@ -221,6 +249,30 @@ func updateTask(t UpdateTaskParams) {
 	}
 }
 
+/* Mark a Task as completed by its id */
+func completeTask(id int) {
+	c := connectDB()
+	defer c.Close(context.Background())
+
+	_, err := c.Exec(context.Background(), "UPDATE tasks SET completed='t' WHERE id=$1;", id);
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to mark task as completed: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+/* Mark a previously completed task as incomplete by its id */
+func incompleteTask(id int) {
+	c := connectDB()
+	defer c.Close(context.Background())
+
+	_, err := c.Exec(context.Background(), "UPDATE tasks SET completed='f' WHERE id=$1;", id);
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to mark task as not completed: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 /* Deletes a Task in the database with the corresponding id */
 func deleteTask(id int) {
 	c := connectDB()
@@ -266,6 +318,12 @@ func addTask(params CreateTaskParams) {
 // get a task where id=1
 //		curl -X POST 0.0.0.0:8080/gettask -H "Content-Type: application/json" -d '2'
 //		curl -X POST https://tomato-backend-api.herokuapp.com/gettask -H "Content-Type: application/json" -d '2'
+
+// mark a task as complete with id
+//		curl -X POST 0.0.0.0:8080/completetask -H "Content-Type: application/json" -d '2'
+
+// mark a task as incomplete with id
+//		curl -X POST 0.0.0.0:8080/incompletetask -H "Content-Type: application/json" -d '2'
 
 // deletes a task by its id (which is its primary-key in the db)
 // 		curl -X POST 0.0.0.0:8080/deletetask -H "Content-Type: application/json" -d '2'
