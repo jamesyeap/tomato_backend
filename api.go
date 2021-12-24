@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
-	// "time"
+	"time"
 	"github.com/jackc/pgx/v4"
 	"context"
 	"os"
@@ -65,6 +65,7 @@ func main() {
 	config.AllowAllOrigins = true
 	config.AllowHeaders = []string{"Origin"}
 	config.ExposeHeaders = []string{"Content-Length"}
+	config.MaxAge = 12 * time.Hour
 	r.Use(cors.New(config));
 
 	/* --------------------------------------------------------------- URL ENDPOINTS -------------- */
