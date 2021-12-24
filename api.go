@@ -59,9 +59,12 @@ func CORSMiddleware() gin.HandlerFunc {
 func main() {
 	r := gin.Default()
 	r.Use(CORSMiddleware());
+
 	config := cors.DefaultConfig()
 	config.AllowMethods = []string{"GET", "POST"}
 	config.AllowAllOrigins = true
+	config.AllowHeaders = []string{"Origin"}
+	config.ExposeHeaders = []string{"Content-Length"}
 	r.Use(cors.New(config));
 
 	/* --------------------------------------------------------------- URL ENDPOINTS -------------- */
