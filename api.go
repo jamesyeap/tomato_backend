@@ -38,7 +38,7 @@ type UpdateTaskParams struct {
 }
 
 type GetTaskByIdParams struct {
-	Id int `json:id`
+	Id int `json:"id"`
 }
 
 // CORS middleware
@@ -109,39 +109,39 @@ func main() {
 	r.POST("/completetask", func(c *gin.Context) {
 		_, cancel := context.WithCancel(context.Background());
 
-		var id int;
-		err := c.BindJSON(&id);
+		var params GetTaskByIdParams;
+		err := c.BindJSON(&params)
 		assertJSONSuccess(c, cancel, err);
 
-		completeTask(id, c, cancel);
+		completeTask(params.Id, c, cancel);
 
-		c.JSON(200, fmt.Sprintf("Successfully completed task with id: %v", id))
+		c.JSON(200, fmt.Sprintf("Successfully completed task with id: %v", params.Id))
 	})
 
 	// mark a task as incomplete by id
 	r.POST("/incompletetask", func(c *gin.Context) {
 		_, cancel := context.WithCancel(context.Background());
 
-		var id int;
-		err := c.BindJSON(&id);
+		var params GetTaskByIdParams;
+		err := c.BindJSON(&params)
 		assertJSONSuccess(c, cancel, err);
 
-		incompleteTask(id, c, cancel);
+		incompleteTask(params.Id, c, cancel);
 
-		c.JSON(200, fmt.Sprintf("Successfully marked task as incomplete with id: %v", id))
+		c.JSON(200, fmt.Sprintf("Successfully marked task as incomplete with id: %v", params.Id))
 	})
 
 	// deletes a task by id
 	r.POST("/deletetask", func(c *gin.Context) {
 		_, cancel := context.WithCancel(context.Background());
 
-		var id int;
-		err := c.BindJSON(&id);
+		var params GetTaskByIdParams;
+		err := c.BindJSON(&params)
 		assertJSONSuccess(c, cancel, err);
 
-		deleteTask(id, c, cancel);
+		deleteTask(params.Id, c, cancel);
 
-		c.String(200, fmt.Sprintf("Successfully deleted task with id: %v", id))
+		c.String(200, fmt.Sprintf("Successfully deleted task with id: %v", params.Id))
 	})
 
 	// adds a task
