@@ -85,6 +85,22 @@ func main() {
 		c.JSON(200, taskList)
 	})
 
+	// get all completed tasks
+	r.GET("/completedtasks", func(c *gin.Context) {
+		_, cancel := context.WithCancel(context.Background());
+
+		var taskList []Task = getCompletedTasks(c, cancel);
+		c.JSON(200, taskList)
+	})
+
+	// get all incomplete tasks
+	r.GET("/incompletetasks", func(c *gin.Context) {
+		_, cancel := context.WithCancel(context.Background());
+
+		var taskList []Task = getIncompleteTasks(c, cancel);
+		c.JSON(200, taskList)
+	})
+
 	// get a specific task by id
 	r.POST("/gettask", func(c *gin.Context) {
 		_, cancel := context.WithCancel(context.Background());
@@ -192,6 +208,64 @@ func getAllTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
 	defer c.Close(context.Background())
 
 	tasks, err := c.Query(context.Background(), "SELECT * from public.get_all_tasks();")
+	assertDBOperationSuccess(client, cancel, err);
+	defer tasks.Close();
+
+	var taskSlice []Task
+	for tasks.Next() {
+		var t Task
+		err = tasks.Scan(
+			&t.Id, 
+			&t.Title,
+			&t.Description,
+			&t.Category_Id,
+			&t.Category,
+			&t.Deadline,
+			&t.Completed,
+			&t.Created_at,
+			&t.Updated_at,	
+		)
+		assertDBOperationSuccess(client, cancel, err);
+		taskSlice = append(taskSlice, t)
+	}
+
+	return taskSlice;
+}
+
+func getCompletedTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
+	c := connectDB(client, cancel)
+	defer c.Close(context.Background())
+
+	tasks, err := c.Query(context.Background(), "SELECT * from public.get_completed_tasks();")
+	assertDBOperationSuccess(client, cancel, err);
+	defer tasks.Close();
+
+	var taskSlice []Task
+	for tasks.Next() {
+		var t Task
+		err = tasks.Scan(
+			&t.Id, 
+			&t.Title,
+			&t.Description,
+			&t.Category_Id,
+			&t.Category,
+			&t.Deadline,
+			&t.Completed,
+			&t.Created_at,
+			&t.Updated_at,	
+		)
+		assertDBOperationSuccess(client, cancel, err);
+		taskSlice = append(taskSlice, t)
+	}
+
+	return taskSlice;
+}
+
+func getIncompleteTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
+	c := connectDB(client, cancel)
+	defer c.Close(context.Background())
+
+	tasks, err := c.Query(context.Background(), "SELECT * from public.get_incomplete_tasks();")
 	assertDBOperationSuccess(client, cancel, err);
 	defer tasks.Close();
 
