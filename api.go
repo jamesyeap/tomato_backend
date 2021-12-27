@@ -39,7 +39,7 @@ type UpdateTaskParams struct {
 	Id int `json:id`
 	Title string `json:"title"`
 	Description string `json:"description"`
-	Category_Id string `json:"category_id"`
+	Category_Id int `json:"category_id"`
 	Deadline null.Time `json:"deadline"`	
 }
 
