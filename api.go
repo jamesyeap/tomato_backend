@@ -12,14 +12,20 @@ import (
 
 // structs
 type Task struct {
-	Id int // note: make sure the attributes are Capitalized -> if not they won't be exported -> json-encoder will not be able to access attributes, causing an empty object ("{}") to be returned.
-	Title string
-	Description string
-	Category string
-	Deadline null.Time
-	Completed bool
-	Created_at null.Time
-	Updated_at null.Time
+	Id int `json:"id"`// note: make sure the attributes are Capitalized -> if not they won't be exported -> json-encoder will not be able to access attributes, causing an empty object ("{}") to be returned.
+	Title string `json:"title"`
+	Description string `json:"description"`
+	Category_Id int `json:"category_id"`
+	Category string `json:"category"`
+	Deadline null.Time `json:"deadline"`
+	Completed bool `json:"completed"`
+	Created_at null.Time `json:"created_at"`
+	Updated_at null.Time `json:"updated_at"`
+}
+
+type Category struct {
+	Id int `json:"category_id"`
+	Title string `json:"category_title"`
 }
 
 type CreateTaskParams struct {
@@ -155,6 +161,13 @@ func main() {
 		addTask(params, c, cancel)		
 	})
 
+	// gets a list of all categories
+	r.GET("/allcategories", func(c *gin.Context) {
+		_, cancel := context.WithCancel(context.Background());
+		var categoryList []Category = getAllCategories(c, cancel);
+		c.JSON(200, categoryList)
+	})
+
 	// start the server
 	r.Run()
 }
@@ -176,7 +189,7 @@ func connectDB(client *gin.Context, cancel context.CancelFunc) (c *pgx.Conn) {
 /* Returns an array of Tasks stored in the database */
 func getAllTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
 	c := connectDB(client, cancel)
-	// defer c.Close(context.Background())
+	defer c.Close(context.Background())
 
 	tasks, err := c.Query(context.Background(), "SELECT * from public.get_all_tasks();")
 	assertDBOperationSuccess(client, cancel, err);
@@ -195,10 +208,7 @@ func getAllTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
 			&t.Created_at,
 			&t.Updated_at,	
 		)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to fetch tasks from db: %v\n", err)
-			os.Exit(1)
-		}
+		assertDBOperationSuccess(client, cancel, err);
 		taskSlice = append(taskSlice, t)
 	}
 
@@ -281,6 +291,29 @@ func addTask(params CreateTaskParams, client *gin.Context, cancel context.Cancel
 		client.JSON(500, gin.H{"error": err.Error()})
 		return;
 	}
+}
+
+/* Returns a list of categories with their associated primary-keys */
+func getAllCategories(client *gin.Context, cancel context.CancelFunc) ([]Category) {
+	c := connectDB(client, cancel)
+	defer c.Close(context.Background())
+
+	categories, err := c.Query(context.Background(), "SELECT * from categories;")
+	assertDBOperationSuccess(client, cancel, err);
+	defer categories.Close();
+
+	var categorySlice []Category
+	for categories.Next() {
+		var cat Category
+		err = categories.Scan(
+			&cat.Id,
+			&cat.Title,
+		)
+		assertDBOperationSuccess(client, cancel, err);
+		categorySlice = append(categorySlice, cat)
+	}
+
+	return categorySlice;
 }
 
 /* ------------------------------------------------------------ HELPER FUNCTIONS --------------------- */
