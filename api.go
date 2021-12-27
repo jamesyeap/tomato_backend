@@ -202,6 +202,7 @@ func getAllTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
 			&t.Id, 
 			&t.Title,
 			&t.Description,
+			&t.Category_Id,
 			&t.Category,
 			&t.Deadline,
 			&t.Completed,
