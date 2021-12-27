@@ -47,6 +47,10 @@ type GetTaskByIdParams struct {
 	Id int `json:"id"`
 }
 
+type GetTaskByCategoryIdParams struct {
+	Category_Id int `json:category_id`
+}
+
 // CORS middleware
 func CORSMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
@@ -112,6 +116,19 @@ func main() {
 		var t Task = getTask(params.Id, c, cancel);
 
 		c.JSON(200, t)
+	})
+
+	// get tasks by category id
+	r.POST("/gettaskbycategoryid", func(c *gin.Context) {
+		_, cancel := context.WithCancel(context.Background());
+
+		var params GetTaskByCategoryIdParams
+		err := c.BindJSON(&params);
+		assertJSONSuccess(c, cancel, err);
+
+		var taskList []Task = getTaskByCategoryId(params.Category_Id, c, cancel);
+
+		c.JSON(200, taskList)
 	})
 
 	// update a specific task by id
@@ -202,12 +219,42 @@ func connectDB(client *gin.Context, cancel context.CancelFunc) (c *pgx.Conn) {
 	return conn;
 }
 
-/* Returns an array of Tasks stored in the database */
+/* Returns an array of all Tasks stored in the database */
 func getAllTasks(client *gin.Context, cancel context.CancelFunc) ([]Task) {
 	c := connectDB(client, cancel)
 	defer c.Close(context.Background())
 
 	tasks, err := c.Query(context.Background(), "SELECT * from public.get_all_tasks();")
+	assertDBOperationSuccess(client, cancel, err);
+	defer tasks.Close();
+
+	var taskSlice []Task
+	for tasks.Next() {
+		var t Task
+		err = tasks.Scan(
+			&t.Id, 
+			&t.Title,
+			&t.Description,
+			&t.Category_Id,
+			&t.Category,
+			&t.Deadline,
+			&t.Completed,
+			&t.Created_at,
+			&t.Updated_at,	
+		)
+		assertDBOperationSuccess(client, cancel, err);
+		taskSlice = append(taskSlice, t)
+	}
+
+	return taskSlice;
+}
+
+/* Returns an array of Tasks that belong to the specified ID stored in the database */
+func getTaskByCategoryId(category_id int, client *gin.Context, cancel context.CancelFunc) ([]Task) {
+	c := connectDB(client, cancel)
+	defer c.Close(context.Background())
+
+	tasks, err := c.Query(context.Background(), "SELECT * from public.get_tasks_in_category($1);", category_id)
 	assertDBOperationSuccess(client, cancel, err);
 	defer tasks.Close();
 
