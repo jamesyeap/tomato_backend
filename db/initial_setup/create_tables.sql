@@ -15,3 +15,27 @@ CREATE TABLE public.tasks (
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE public.users (
+	id SERIAL PRIMARY KEY,
+	username TEXT UNIQUE NOT NULL,
+	password TEXT
+);
+
+-- creating a new user
+-- INSERT INTO users (email, password) VALUES (
+--   'johndoe@mail.com',
+--   crypt('johnspassword', gen_salt('bf'))
+-- );
+
+-- verifying a new user
+
+-- SELECT id 
+--   FROM users
+--  WHERE email = 'johndoe@mail.com' 
+--    AND password = crypt('johnspassword', password);
+
+-- SELECT id 
+--   FROM users
+--  WHERE email = 'johndoe@mail.com' 
+--    AND password = crypt('wrongpassword', password);

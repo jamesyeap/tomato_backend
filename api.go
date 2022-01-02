@@ -8,11 +8,28 @@ import (
 	"os"
 	"github.com/joho/godotenv"
 	"github.com/emvi/null"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // structs
+
+// note: make sure the attributes in the struct are Capitalized
+//		if not they won't be exported and cannot be accessed (kinda like private in Java),
+//		as such, .BindJson will not be able to access attributes, 
+//		causing an empty object ("{}") to be returned
+
+type Credentials struct {
+	Username string `json:username`
+	Password string `json:password`
+}
+
+type User struct {
+	Id int `json:id`
+	Username string `json:username`
+}
+
 type Task struct {
-	Id int `json:"id"`// note: make sure the attributes are Capitalized -> if not they won't be exported -> json-encoder will not be able to access attributes, causing an empty object ("{}") to be returned.
+	Id int `json:"id"`
 	Title string `json:"title"`
 	Description string `json:"description"`
 	Category_Id int `json:"category_id"`
@@ -81,8 +98,42 @@ func main() {
 		c.String(200, "Hello!")
 	})
 
+	// sign a new user up
+	r.POST("/signup", func(c *gin.Context) {
+		_, cancel := context.WithCancel(context.Background());
+
+		var params Credentials;
+		err := c.BindJSON(&params);
+		assertJSONSuccess(c, cancel, err);
+
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), 8)
+
+		details, err := signUp(params.Username, hashedPassword, c, cancel)
+
+		if (err == nil) {
+			c.JSON(200, details);
+		}
+	})
+
+	// log in an existing user
+	r.POST("/login", func(c *gin.Context) {
+		_, cancel := context.WithCancel(context.Background());
+
+		var params Credentials;
+		err := c.BindJSON(&params);
+		assertJSONSuccess(c, cancel, err);
+
+		fmt.Println(params);
+
+		details, err := logIn(params.Username, params.Password, c, cancel)
+
+		if (err == nil) {
+			c.JSON(200, details);
+		}
+	})
+
 	// get all tasks
-	r.GET("/alltasks", func(c *gin.Context) {
+	r.POST("/alltasks", func(c *gin.Context) {
 		_, cancel := context.WithCancel(context.Background());
 
 		var taskList []Task = getAllTasks(c, cancel);
@@ -217,6 +268,80 @@ func connectDB(client *gin.Context, cancel context.CancelFunc) (c *pgx.Conn) {
 	assertDBSuccess(client, cancel, err);
 
 	return conn;
+}
+
+/* Creates an account for a new user and returns the details of the user */
+func signUp(username string, password []byte, client *gin.Context, cancel context.CancelFunc) (User, error) {
+	c := connectDB(client, cancel)
+	defer c.Close(context.Background())
+
+	_, err := c.Exec(context.Background(), "INSERT INTO users (username, password) VALUES ($1, $2);", username, password);
+
+	var user User
+
+	// if a user with the same username already exists,
+	if (err != nil) {
+		fmt.Fprintf(os.Stderr, "Unable to create a new user account: %v\n", err);
+
+		// return HTTP Error 409: Conflict
+		client.JSON(409, gin.H{"error": err.Error()});
+
+		cancel();
+
+		return user, err;
+	}
+
+	err = c.QueryRow(context.Background(), "SELECT id, username FROM users WHERE username=$1", username).Scan(
+		&user.Id,
+		&user.Username,
+	)
+	assertDBOperationSuccess(client, cancel, err);
+
+	return user, nil;
+}
+
+/* Logs in an existing-user */
+func logIn(username string, password string, client *gin.Context, cancel context.CancelFunc) (User, error) {
+	c := connectDB(client, cancel)
+	defer c.Close(context.Background())
+
+	var storedPassword string;
+	var user User;
+
+	err := c.QueryRow(context.Background(), "SELECT password FROM users WHERE username=$1;", username).Scan(&storedPassword);
+
+	// check if the user exists
+	if (err != nil) {
+		fmt.Fprintf(os.Stderr, "Unable to log user in: %v\n", err);
+
+		// return HTTP Error 401: Unauthorised
+		client.JSON(401, gin.H{"error": err.Error()});
+
+		cancel();
+
+		return user, err;
+	}
+
+	// check if the password is correct
+	err = bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(password));
+	if (err != nil) {
+		fmt.Fprintf(os.Stderr, "Unable to log user in: %v\n", err);
+
+		client.JSON(401, gin.H{"error": err.Error()});
+
+		cancel();
+
+		return user, err;
+	}
+
+	// if credentials given are correct, return the user object
+	err = c.QueryRow(context.Background(), "SELECT id, username FROM users WHERE username=$1", username).Scan(
+		&user.Id,
+		&user.Username,
+	)
+	assertDBOperationSuccess(client, cancel, err);
+
+	return user, nil;
 }
 
 /* Returns an array of all Tasks stored in the database */
